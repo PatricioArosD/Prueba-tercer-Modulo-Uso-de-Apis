@@ -1,63 +1,57 @@
 const formulario = document.querySelector("#formulario")
+const ctx = document.getElementById('myChart');
+let myChart;
 
 const obtenerData = async () => {
   const res = await fetch("https://mindicador.cl/api/")
   const data = await res.json()
   return data
 }
-const obtenerDataDolar = async () => {
-  const res = await fetch("https://mindicador.cl/api/dolar")
-  const dataDolar = await res.json()
-  return dataDolar
-}
-const obtenerDataEuro = async () => {
-  const res = await fetch("https://mindicador.cl/api/euro")
-  const dataEuro = await res.json()
-  return dataEuro
-}
-const obtenerDataUf = async () => {
-  const res = await fetch("https://mindicador.cl/api/uf")
-  const dataUf = await res.json()
-  return dataUf
-}
-const crearGrafico = async () => {
-  const ctx = document.getElementById('myChart');
+
+const obtenerDataMoneda = async () => {
   let moneda = document.querySelector("#moneda").value
-  try{
-    if(moneda = "dolar"){
-      const resultadomoneda = await obtenerDataDolar()
+  let url = `https://mindicador.cl/api/${moneda}`
+  const res = await fetch(url)
+  const dataMoneda = await res.json()
+  return dataMoneda
+}
+
+const crearGrafico = async () => {
+  let moneda = document.querySelector("#moneda").value
+  try {
+    if (myChart) {
+      myChart.destroy(); // Destruir el gráfico existente si hay uno
     }
-    else if(moneda = "euro"){
-      const resultadomoneda = await obtenerDataEuro()
-    }else if(moneda="uf"){
-      const resultadomoneda = await obtenerDataUf()
-    }
-    const fechascompletas= resultadomoneda.serie.map(item => item.fecha)
-    const fechasActuales= (fechascompletas.map(fecha => fecha.slice(0, 10))).slice(-10)
-    const valoresActuales= (resultadomoneda.serie.map(item => item.valor)).slice(-10)
-    console.log(fechasActuales,valoresActuales)
-  
-    new Chart(ctx, {
+    const resultadomoneda = await obtenerDataMoneda()
+    const fechascompletas = resultadomoneda.serie.map(item => item.fecha)
+    const fechasActuales = (fechascompletas.map(fecha => fecha.slice(0, 10))).slice(-10)
+    const valoresActuales = (resultadomoneda.serie.map(item => item.valor)).slice(-10)
+    console.log(fechasActuales, valoresActuales)
+    ctx.style.backgroundColor = "white";
+    ctx.style.margin ="20px"
+    myChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: fechasActuales,
+        labels: fechasActuales.reverse(),
         datasets: [{
-          label: 'Valor del dólar',
+          label: `Valor: ${moneda}`,
+          borderColor: "rgb(255, 99, 132)",
           data: valoresActuales,
           borderWidth: 1
         }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
         }
       }
-    }
-  })}
-  catch(error){alert(error.message)}
+    });
+  }
+  catch (error) { alert(error.menssage) }
 };
-crearGrafico()
+
 let resultados = document.querySelector("#resultado")
 html = ""
 formulario.addEventListener("submit", async (event) => {
@@ -67,11 +61,12 @@ formulario.addEventListener("submit", async (event) => {
   try {
     let resultado = await obtenerData();
     const valorActual = (resultado[moneda].valor)
-    const calculo = ((monto) / Number(valorActual))
+    const calculo = ((monto) / Number(valorActual)).toFixed(2)
     html = ""
-    html += `<p>El valor obtenido es: ${calculo} </p>`
+    html += `<p>Resultado: $${calculo} </p>`
     resultados.innerHTML = html;
   } catch (error) {
-    alert(error.message);
+    alert(error.menssage);
   }
+  crearGrafico()
 })
